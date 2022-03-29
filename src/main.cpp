@@ -1,8 +1,7 @@
-#include <opencv2/opencv.hpp>
-
 #define CVUI_IMPLEMENTATION
 #include "../cvui.h"
 #include <opencv2/opencv.hpp>
+#include <cmath>
 
 #define MENU_WINDOW "GVMP | Garren's Video Manipulation Program"
 #define VIDEO_STREAM_WINDOW "Video Stream"
@@ -89,10 +88,21 @@ int main(int argc, const char *argv[])
 			cv::Sobel(frame, grad_y, ddepth, 0, 1, kernelSize, 1.0f, 0.0f, cv::BORDER_DEFAULT);
 			convertScaleAbs(grad_x, abs_grad_x);
 			convertScaleAbs(grad_y, abs_grad_y);
-			addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, frame);
+			uchar* row, *x_grad, *y_grad;
+			for (int i = 0; i < grad_x.size().height; i++)
+			{
+				row = frame.ptr(i);
+				x_grad = abs_grad_x.ptr(i);
+				y_grad = abs_grad_y.ptr(i);
+				for (int j = 0; j < grad_x.size().width; j++)
+				{
+					row[j] = Local::clamp(sqrt(x_grad[j]*x_grad[j] + y_grad[j]*y_grad[j]), 0.0, 255.0);
+				}
+				
+			}
 		}
 		if (getNegative) frame.convertTo(frame, -1, -1.0, 255);
-		if (applyGrayscale && !detectEdges) cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+		if (applyGrayscale && !detectEdges && !getGradientEstimative) cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 		if (shouldScaleDown) cv::resize(frame, frame, cv::Size(frame.size().width /2, frame.size().height /2));
 		for (size_t i = 0; i < rotations; i++) cv::rotate(frame, frame, cv::ROTATE_90_COUNTERCLOCKWISE);
 		if (shouldMirrorH) cv::flip(frame, frame, 1);
