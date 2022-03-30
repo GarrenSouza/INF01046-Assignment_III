@@ -94,8 +94,8 @@ int main(int argc, const char *argv[])
 				cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 				cv::Mat grad_x, grad_y;
 				cv::Mat abs_grad_x, abs_grad_y;
-				cv::Sobel(frame, grad_x, ddepth, 1, 0, kernelSize, 1.0f, 0.0f, cv::BORDER_DEFAULT);
-				cv::Sobel(frame, grad_y, ddepth, 0, 1, kernelSize, 1.0f, 0.0f, cv::BORDER_DEFAULT);
+				cv::Sobel(frame, grad_x, ddepth, 1, 0, Local::clamp(2*(kernelSize - 1) - 1, 3, 31), 1.0f, 0.0f, cv::BORDER_DEFAULT);
+				cv::Sobel(frame, grad_y, ddepth, 0, 1, Local::clamp(2*(kernelSize - 1) - 1, 3, 31), 1.0f, 0.0f, cv::BORDER_DEFAULT);
 				convertScaleAbs(grad_x, abs_grad_x);
 				convertScaleAbs(grad_y, abs_grad_y);
 				uchar* row, *x_grad, *y_grad;
@@ -123,7 +123,10 @@ int main(int argc, const char *argv[])
 			cv::imshow(VIDEO_STREAM_WINDOW, frame);
 			cvui::update();
 
-			if(rotations == 0 && !shouldScaleDown) video.write(frame);
+			if(rotations == 0 && !shouldScaleDown) {
+				if(applyGrayscale || getGradientEstimative || detectEdges) cv::cvtColor(frame, frame, cv::COLOR_GRAY2BGR);
+				video.write(frame);
+			}
 
 			// Check if ESC key was pressed
 			if (cv::waitKey(20) == 27) {
